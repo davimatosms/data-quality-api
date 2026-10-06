@@ -1,0 +1,62 @@
+services:
+  api-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: data_quality
+      POSTGRES_USER: quality
+      POSTGRES_PASSWORD: quality
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quality -d data_quality"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - api_pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://quality:quality@api-db:5432/data_quality
+    depends_on:
+      api-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  etl-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: etl_data_quality
+      POSTGRES_USER: etl_user
+      POSTGRES_PASSWORD: etl_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U etl_user -d etl_data_quality"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - etl_pgdata:/var/lib/postgresql/data
+      - ../etl-data-quality/sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+
+  etl-demo:
+    build:
+      context: ../etl-data-quality
+    environment:
+      DATABASE_URL: postgresql+psycopg2://etl_user:etl_password@etl-db:5432/etl_data_quality
+      QUALITY_API_URL: http://api:8000
+    command: ["python", "-m", "scripts.run_demo"]
+    depends_on:
+      api:
+        condition: service_healthy
+      etl-db:
+        condition: service_healthy
+
+volumes:
+  api_pgdata:
+  etl_pgdata:
