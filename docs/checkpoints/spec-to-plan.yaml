@@ -1,0 +1,17 @@
+requirements:
+  - id: REQ-001
+    plan_items: [P1.1, P1.2]
+  - id: REQ-002
+    plan_items: [P2.1]
+  - id: REQ-003
+    plan_items: [P2.2]
+  - id: REQ-004
+    plan_items: [P2.2]
+  - id: REQ-005
+    plan_items: [P2.3]
+  - id: REQ-006
+    plan_items: [P1.1, P3.2]
+  - id: REQ-007
+    plan_items: [P3.1]
+  - id: REQ-008
+    plan_items: [P3.3, P3.4]
